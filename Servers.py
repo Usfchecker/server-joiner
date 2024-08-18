@@ -1,3 +1,5 @@
+import requests
+from bs4 import BeautifulSoup
 import subprocess
 import sys
 import time
@@ -6,9 +8,6 @@ import pyautogui
 import win32api
 import win32con
 import win32gui
-import requests
-from bs4 import BeautifulSoup
-import re
 
 def install_package(package):
     """Install a package using pip"""
@@ -98,48 +97,60 @@ def handle_trickshot_choice(choice, servers):
         print("Invalid choice. Please select a valid option.")
     return True
 
-def scrape_trickshot_servers(url):
-    """Scrape trickshot servers from the specified URL"""
-    ipv4_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$')
+def scrape_h2m_trickshot_servers(url):
+    """Scrape H2M trickshot servers from the specified URL"""
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    # Adjust these selectors based on the actual HTML structure
-    server_rows = soup.find_all('tr', class_='server-row')
+    # Find the H2M servers section
+    h2m_panel = soup.find('div', id='H2M_servers')
+    if not h2m_panel:
+        print("H2M servers section not found. Check the HTML structure.")
+        return []
+
+    # Find the server table within the H2M servers section
+    server_table = h2m_panel.find('table', class_='table table-striped table-hover table-responsive table-outer-bordered')
+    if not server_table:
+        print("Server table not found within H2M servers section.")
+        return []
 
     ip_port_list = []
-    for row in server_rows:
-        ip = row.get('data-ip')
-        port = row.get('data-port')
-        name = row.get('data-name', '').lower()
-        if ip and port and ipv4_pattern.match(ip) and 'trickshot' in name:
-            ip_port_list.append(f"{ip}:{port}")
+    table_rows = server_table.find_all('tr', class_='server-row')
+
+    for row in table_rows:
+        data_ip = row.get('data-ip')
+        data_port = row.get('data-port')
+        server_name = row.find('td').get_text(strip=True)
+        mode = row.find_all('td')[3].get_text(strip=True)
+        if data_ip and data_port:
+            ip_port_list.append((data_ip, data_port, server_name, mode))
 
     return ip_port_list
 
-def handle_scraped_servers_choice(choice):
+def handle_scraped_servers_choice():
     """Handle the scraped trickshot server selection"""
     url = 'https://master.iw4.zip/servers'
-    servers = scrape_trickshot_servers(url)
+    servers = scrape_h2m_trickshot_servers(url)
 
     if not servers:
-        print("No trickshot servers found.")
+        print("No H2M trickshot servers found.")
         return True
 
     clear_screen()
-    print("Scraped Trickshot Servers:")
-    for i, server in enumerate(servers, start=1):
-        print(f"{i}. {server}")
-    print("0. Back to Main Menu")
+    print("Scraped H2M Trickshot Servers:")
+    for i, (ip, port, server_name, mode) in enumerate(servers, start=1):
+        print(f"{i}. {server_name} - {mode}")
 
+    print("0. Back to Main Menu")
     choice = input("Enter your choice: ")
+
     if choice == '0':
         return True
     elif choice.isdigit() and 1 <= int(choice) <= len(servers):
-        server_ip = servers[int(choice) - 1]
+        ip, port, server_name, mode = servers[int(choice) - 1]
+        connect_command = f"connect {ip}:{port}\n"
         hwnd = get_console_window("H2M-Mod: 03361cd0-dirty")
         if hwnd:
-            connect_command = f"connect {server_ip}\n"
             send_command_to_window(hwnd, connect_command)
         else:
             print("Command prompt window not found.")
@@ -169,7 +180,7 @@ def main():
                     break
         elif choice == '2':
             while True:
-                if not handle_scraped_servers_choice(choice):
+                if not handle_scraped_servers_choice():
                     break
         elif choice == '0':
             print("Exiting...")
