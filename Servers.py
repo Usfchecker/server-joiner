@@ -62,7 +62,7 @@ def display_menu():
     clear_screen()
     print("Menu:")
     print("1. Trickshot Servers")
-    print("2. Scraped Trickshot Servers")
+    print("2. Server Browser")
     print("0. Exit")
 
 def display_trickshot_servers():
