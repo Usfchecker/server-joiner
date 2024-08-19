@@ -3,9 +3,6 @@ import sys
 import time
 import os
 import requests
-from bs4 import BeautifulSoup
-import pyautogui
-import win32gui
 
 def install_package(package):
     """Install a package using pip"""
@@ -18,10 +15,7 @@ def install_package(package):
 def setup():
     """Ensure all required packages are installed"""
     required_packages = [
-        "pyautogui",
-        "requests",
-        "beautifulsoup4",
-        "pywin32"
+        "requests"
     ]
     
     for package in required_packages:
@@ -30,24 +24,6 @@ def setup():
         except ImportError:
             print(f"Required package '{package}' is not installed. Installing now...")
             install_package(package)
-
-def get_console_window(title):
-    """Find the window by its title"""
-    hwnd = win32gui.FindWindow(None, title)
-    if hwnd == 0:
-        print(f"Window with title '{title}' not found.")
-    return hwnd
-
-def send_command_to_window(hwnd, command):
-    """Send a command to the specified window"""
-    if hwnd:
-        win32gui.SetForegroundWindow(hwnd)
-        time.sleep(0.1)  # Short delay to ensure the window is in focus
-        pyautogui.typewrite(command, interval=0.05)
-        pyautogui.press('enter')
-        print(f"Sent command: {command}")
-    else:
-        print("No window handle provided.")
 
 def clear_screen():
     """Clear the console screen"""
@@ -83,15 +59,8 @@ def handle_trickshot_choice(choice, servers):
         return False
     elif choice.isdigit() and 1 <= int(choice) <= len(servers):
         server_name, server_ip = servers[int(choice) - 1]
-        hwnd = get_console_window("H2M-Mod: 03361cd0-dirty")
-        if hwnd:
-            disconnect_command = "disconnect\n"
-            connect_command = f"connect {server_ip}\n"
-            send_command_to_window(hwnd, disconnect_command)
-            time.sleep(1)  # Short delay to ensure disconnect completes
-            send_command_to_window(hwnd, connect_command)
-        else:
-            print("Command prompt window not found.")
+        command = f"connect {server_ip}"
+        subprocess.Popen(['cmd', '/c', 'echo', command], shell=True)  # Open a new command prompt and echo the command
     else:
         print("Invalid choice. Please select a valid option.")
     return True
@@ -173,15 +142,8 @@ def handle_scraped_servers_choice():
         return False
     elif choice.isdigit() and 1 <= int(choice) <= len(servers):
         server_name, ip, port, mode, player_count = servers[int(choice) - 1]
-        connect_command = f"connect {ip}:{port}\n"
-        hwnd = get_console_window("H2M-Mod: 03361cd0-dirty")
-        if hwnd:
-            disconnect_command = "disconnect\n"
-            send_command_to_window(hwnd, disconnect_command)
-            time.sleep(1)  # Short delay to ensure disconnect completes
-            send_command_to_window(hwnd, connect_command)
-        else:
-            print("Command prompt window not found.")
+        connect_command = f"connect {ip}:{port}"
+        subprocess.Popen(['cmd', '/c', 'echo', connect_command], shell=True)  # Open a new command prompt and echo the command
     else:
         print("Invalid choice. Please select a valid option.")
     return True
