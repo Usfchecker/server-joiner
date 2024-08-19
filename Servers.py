@@ -35,16 +35,17 @@ def get_console_window(title):
         print(f"Window with title '{title}' not found.")
     return hwnd
 
-def send_command_to_window(hwnd, command):
-    """Send a command to the specified window"""
+def send_command_to_window(hwnd, *commands):
+    """Send multiple commands to the specified window"""
     import pyautogui
     import win32gui
     if hwnd:
         win32gui.SetForegroundWindow(hwnd)
         time.sleep(0.1)  # Short delay to ensure the window is in focus
-        pyautogui.typewrite(command, interval=0.05)
-        pyautogui.press('enter')
-        print(f"Sent command: {command}")
+        for command in commands:
+            pyautogui.typewrite(command, interval=0.05)
+            pyautogui.press('enter')
+            print(f"Sent command: {command.strip()}")
     else:
         print("No window handle provided.")
 
@@ -84,8 +85,10 @@ def handle_trickshot_choice(choice, servers):
         server_ip = servers[int(choice) - 1]
         hwnd = get_console_window("H2M-Mod: 03361cd0-dirty")
         if hwnd:
+            # Disconnect command followed by connect command
+            disconnect_command = "disconnect\n"
             connect_command = f"connect {server_ip}\n"
-            send_command_to_window(hwnd, connect_command)
+            send_command_to_window(hwnd, disconnect_command, connect_command)
         else:
             print("Command prompt window not found.")
     else:
@@ -146,9 +149,10 @@ def handle_scraped_servers_choice():
     elif choice.isdigit() and 1 <= int(choice) <= len(servers):
         ip, port, server_name, mode = servers[int(choice) - 1]
         connect_command = f"connect {ip}:{port}\n"
+        disconnect_command = "disconnect\n"
         hwnd = get_console_window("H2M-Mod: 03361cd0-dirty")
         if hwnd:
-            send_command_to_window(hwnd, connect_command)
+            send_command_to_window(hwnd, disconnect_command, connect_command)
         else:
             print("Command prompt window not found.")
     else:
