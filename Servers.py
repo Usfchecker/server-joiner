@@ -11,23 +11,21 @@ def install_package(package):
         print(f"Error installing package {package}: {e}")
         sys.exit(1)
 
-def ensure_packages():
+def setup():
     """Ensure all required packages are installed"""
     required_packages = [
         "pyautogui",
         "requests",
         "beautifulsoup4",
-        "pywin32"  # This package includes win32api, win32con, win32gui
+        "pywin32"
     ]
     
     for package in required_packages:
         try:
-            __import__(package)
+            __import__(package.split('==')[0])
         except ImportError:
             print(f"Required package '{package}' is not installed. Installing now...")
             install_package(package)
-    
-    print("All required packages are installed.")
 
 def get_console_window(title):
     """Find the window by its title"""
@@ -159,7 +157,7 @@ def handle_scraped_servers_choice():
 
 def main():
     """Main function to run the script"""
-    ensure_packages()  # Ensure required packages are installed
+    setup()  # Ensure required packages are installed
     while True:
         display_menu()
         choice = input("Enter your choice: ")
