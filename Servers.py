@@ -2,12 +2,6 @@ import subprocess
 import sys
 import time
 import os
-import pyautogui
-import win32api
-import win32con
-import win32gui
-import requests
-from bs4 import BeautifulSoup
 
 def install_package(package):
     """Install a package using pip"""
@@ -17,23 +11,27 @@ def install_package(package):
         print(f"Error installing package {package}: {e}")
         sys.exit(1)
 
-def setup():
+def ensure_packages():
     """Ensure all required packages are installed"""
-    packages = {
-        "pyautogui": "pyautogui",
-        "requests": "requests",
-        "beautifulsoup4": "beautifulsoup4",
-        "pywin32": "pywin32"
-    }
-    for package, pip_name in packages.items():
+    required_packages = [
+        "pyautogui",
+        "requests",
+        "beautifulsoup4",
+        "pywin32"  # This package includes win32api, win32con, win32gui
+    ]
+    
+    for package in required_packages:
         try:
             __import__(package)
         except ImportError:
-            print(f"Required package '{pip_name}' is not installed. Installing now...")
-            install_package(pip_name)
+            print(f"Required package '{package}' is not installed. Installing now...")
+            install_package(package)
+    
+    print("All required packages are installed.")
 
 def get_console_window(title):
     """Find the window by its title"""
+    import win32gui
     hwnd = win32gui.FindWindow(None, title)
     if hwnd == 0:
         print(f"Window with title '{title}' not found.")
@@ -41,6 +39,8 @@ def get_console_window(title):
 
 def send_command_to_window(hwnd, command):
     """Send a command to the specified window"""
+    import pyautogui
+    import win32gui
     if hwnd:
         win32gui.SetForegroundWindow(hwnd)
         time.sleep(0.1)  # Short delay to ensure the window is in focus
@@ -96,6 +96,8 @@ def handle_trickshot_choice(choice, servers):
 
 def scrape_h2m_trickshot_servers(url):
     """Scrape H2M trickshot servers from the specified URL"""
+    import requests
+    from bs4 import BeautifulSoup
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -157,7 +159,7 @@ def handle_scraped_servers_choice():
 
 def main():
     """Main function to run the script"""
-    setup()  # Ensure required packages are installed
+    ensure_packages()  # Ensure required packages are installed
     while True:
         display_menu()
         choice = input("Enter your choice: ")
@@ -168,7 +170,7 @@ def main():
                 "45.61.162.8:27022",    # Celebrity's Trickshot Server
                 "45.62.160.81:27016",   # @Brudders FFA [TRICKSHOT LAST OR BAN]
                 "51.161.192.200:27018", # [AU] Gunji x 71st - Vanilla FFA Trickshotting!
-                "51.161.192.200:27017"  # [AU] Gunji x 71st - Vanilla FFA Trickshotting 2!
+                "51.161.192.200:27017" # [AU] Gunji x 71st - Vanilla FFA Trickshotting 2!
             ]
             while True:
                 display_trickshot_servers()
