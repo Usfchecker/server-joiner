@@ -1,5 +1,3 @@
-import requests
-from bs4 import BeautifulSoup
 import subprocess
 import sys
 import time
@@ -8,6 +6,8 @@ import pyautogui
 import win32api
 import win32con
 import win32gui
+import requests
+from bs4 import BeautifulSoup
 
 def install_package(package):
     """Install a package using pip"""
@@ -19,21 +19,18 @@ def install_package(package):
 
 def setup():
     """Ensure all required packages are installed"""
-    try:
-        import pyautogui
-    except ImportError:
-        print("Required package 'pyautogui' is not installed. Installing now...")
-        install_package("pyautogui")
-    try:
-        import requests
-    except ImportError:
-        print("Required package 'requests' is not installed. Installing now...")
-        install_package("requests")
-    try:
-        from bs4 import BeautifulSoup
-    except ImportError:
-        print("Required package 'beautifulsoup4' is not installed. Installing now...")
-        install_package("beautifulsoup4")
+    packages = {
+        "pyautogui": "pyautogui",
+        "requests": "requests",
+        "beautifulsoup4": "beautifulsoup4",
+        "pywin32": "pywin32"
+    }
+    for package, pip_name in packages.items():
+        try:
+            __import__(package)
+        except ImportError:
+            print(f"Required package '{pip_name}' is not installed. Installing now...")
+            install_package(pip_name)
 
 def get_console_window(title):
     """Find the window by its title"""
@@ -171,7 +168,7 @@ def main():
                 "45.61.162.8:27022",    # Celebrity's Trickshot Server
                 "45.62.160.81:27016",   # @Brudders FFA [TRICKSHOT LAST OR BAN]
                 "51.161.192.200:27018", # [AU] Gunji x 71st - Vanilla FFA Trickshotting!
-                "51.161.192.200:27017" # [AU] Gunji x 71st - Vanilla FFA Trickshotting 2!
+                "51.161.192.200:27017"  # [AU] Gunji x 71st - Vanilla FFA Trickshotting 2!
             ]
             while True:
                 display_trickshot_servers()
