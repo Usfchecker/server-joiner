@@ -2,6 +2,10 @@ import subprocess
 import sys
 import time
 import os
+import requests
+from bs4 import BeautifulSoup
+import pyautogui
+import win32gui
 
 def install_package(package):
     """Install a package using pip"""
@@ -22,30 +26,26 @@ def setup():
     
     for package in required_packages:
         try:
-            __import__(package.split('==')[0])
+            __import__(package)
         except ImportError:
             print(f"Required package '{package}' is not installed. Installing now...")
             install_package(package)
 
 def get_console_window(title):
     """Find the window by its title"""
-    import win32gui
     hwnd = win32gui.FindWindow(None, title)
     if hwnd == 0:
         print(f"Window with title '{title}' not found.")
     return hwnd
 
-def send_command_to_window(hwnd, *commands):
-    """Send multiple commands to the specified window"""
-    import pyautogui
-    import win32gui
+def send_command_to_window(hwnd, command):
+    """Send a command to the specified window"""
     if hwnd:
         win32gui.SetForegroundWindow(hwnd)
         time.sleep(0.1)  # Short delay to ensure the window is in focus
-        for command in commands:
-            pyautogui.typewrite(command, interval=0.05)
-            pyautogui.press('enter')
-            print(f"Sent command: {command.strip()}")
+        pyautogui.typewrite(command, interval=0.05)
+        pyautogui.press('enter')
+        print(f"Sent command: {command}")
     else:
         print("No window handle provided.")
 
@@ -62,19 +62,19 @@ def display_menu():
     print("0. Exit")
 
 def display_trickshot_servers():
-    """Display the trickshot servers"""
+    """Display the trickshot servers without showing IPs"""
     clear_screen()
     print("Trickshot Servers:")
     servers = [
-        "Celebrity's Trickshot Server",
-        "Celebrity's Trickshot Server 2",
-        "Celebrity's Trickshot Server 3",
-        "@Brudders FFA [TRICKSHOT LAST OR BAN]",
-        "[AU] Gunji x 71st - Vanilla FFA Trickshotting!",
-        "[AU] Gunji x 71st - Vanilla FFA Trickshotting 2!",
+        ("Celebrity's Trickshot Server", "45.61.162.8:27020"),    # Celebrity's Trickshot Server
+        ("Celebrity's Trickshot Server 2", "45.61.162.8:27021"),    # Celebrity's Trickshot Server
+        ("Celebrity's Trickshot Server 3", "45.61.162.8:27022"),    # Celebrity's Trickshot Server
+        ("@Brudders FFA [TRICKSHOT LAST OR BAN]", "45.62.160.81:27016"),   # @Brudders FFA [TRICKSHOT LAST OR BAN]
+        ("[AU] Gunji x 71st - Vanilla FFA Trickshotting!", "51.161.192.200:27018"), # [AU] Gunji x 71st - Vanilla FFA Trickshotting!
+        ("[AU] Gunji x 71st - Vanilla FFA Trickshotting 2!", "51.161.192.200:27017")  # [AU] Gunji x 71st - Vanilla FFA Trickshotting 2!
     ]
-    for i, server in enumerate(servers, start=1):
-        print(f"{i}. {server}")
+    for i, (name, _) in enumerate(servers, start=1):
+        print(f"{i}. {name}")
     print("0. Back to Main Menu")
 
 def handle_trickshot_choice(choice, servers):
@@ -82,13 +82,14 @@ def handle_trickshot_choice(choice, servers):
     if choice == '0':
         return False
     elif choice.isdigit() and 1 <= int(choice) <= len(servers):
-        server_ip = servers[int(choice) - 1]
+        server_name, server_ip = servers[int(choice) - 1]
         hwnd = get_console_window("H2M-Mod: 03361cd0-dirty")
         if hwnd:
-            # Disconnect command followed by connect command
             disconnect_command = "disconnect\n"
             connect_command = f"connect {server_ip}\n"
-            send_command_to_window(hwnd, disconnect_command, connect_command)
+            send_command_to_window(hwnd, disconnect_command)
+            time.sleep(1)  # Short delay to ensure disconnect completes
+            send_command_to_window(hwnd, connect_command)
         else:
             print("Command prompt window not found.")
     else:
@@ -97,8 +98,6 @@ def handle_trickshot_choice(choice, servers):
 
 def scrape_h2m_trickshot_servers(url):
     """Scrape H2M trickshot servers from the specified URL"""
-    import requests
-    from bs4 import BeautifulSoup
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -122,10 +121,40 @@ def scrape_h2m_trickshot_servers(url):
         data_port = row.get('data-port')
         server_name = row.find('td').get_text(strip=True)
         mode = row.find_all('td')[3].get_text(strip=True)
+        
+        # Find the player count
+        player_count_td = row.find('td', class_='server-clientnum')
+        if player_count_td:
+            player_count = player_count_td.get_text(strip=True)
+        else:
+            player_count = "Unknown"
+
         if data_ip and data_port:
-            ip_port_list.append((data_ip, data_port, server_name, mode))
+            ip_port_list.append((server_name, data_ip, data_port, mode, player_count))
 
     return ip_port_list
+
+def display_scraped_servers(servers):
+    """Display the scraped trickshot servers with player counts"""
+    clear_screen()
+    print("Scraped H2M Trickshot Servers:")
+    for i, (server_name, ip, port, mode, player_count) in enumerate(servers, start=1):
+        # Extract current and max player counts
+        try:
+            current_players, max_players = map(int, player_count.split('/'))
+        except ValueError:
+            current_players = 0
+            max_players = 0
+
+        # Color coding based on player count
+        if max_players <= 18:
+            color = '\033[91m' if current_players == max_players else '\033[92m'  # Red for full, green otherwise
+        else:
+            color = '\033[0m'  # Default color
+
+        print(f"{i}. {server_name} - {mode} - {color}{player_count}\033[0m")  # Reset color after player count
+
+    print("0. Back to Main Menu")
 
 def handle_scraped_servers_choice():
     """Handle the scraped trickshot server selection"""
@@ -136,23 +165,21 @@ def handle_scraped_servers_choice():
         print("No H2M trickshot servers found.")
         return True
 
-    clear_screen()
-    print("Scraped H2M Trickshot Servers:")
-    for i, (ip, port, server_name, mode) in enumerate(servers, start=1):
-        print(f"{i}. {server_name} - {mode}")
+    display_scraped_servers(servers)
 
-    print("0. Back to Main Menu")
     choice = input("Enter your choice: ")
 
     if choice == '0':
-        return True
+        return False
     elif choice.isdigit() and 1 <= int(choice) <= len(servers):
-        ip, port, server_name, mode = servers[int(choice) - 1]
+        server_name, ip, port, mode, player_count = servers[int(choice) - 1]
         connect_command = f"connect {ip}:{port}\n"
-        disconnect_command = "disconnect\n"
         hwnd = get_console_window("H2M-Mod: 03361cd0-dirty")
         if hwnd:
-            send_command_to_window(hwnd, disconnect_command, connect_command)
+            disconnect_command = "disconnect\n"
+            send_command_to_window(hwnd, disconnect_command)
+            time.sleep(1)  # Short delay to ensure disconnect completes
+            send_command_to_window(hwnd, connect_command)
         else:
             print("Command prompt window not found.")
     else:
@@ -167,12 +194,12 @@ def main():
         choice = input("Enter your choice: ")
         if choice == '1':
             servers = [
-                "45.61.162.8:27020",    # Celebrity's Trickshot Server
-                "45.61.162.8:27021",    # Celebrity's Trickshot Server
-                "45.61.162.8:27022",    # Celebrity's Trickshot Server
-                "45.62.160.81:27016",   # @Brudders FFA [TRICKSHOT LAST OR BAN]
-                "51.161.192.200:27018", # [AU] Gunji x 71st - Vanilla FFA Trickshotting!
-                "51.161.192.200:27017" # [AU] Gunji x 71st - Vanilla FFA Trickshotting 2!
+                ("Celebrity's Trickshot Server", "45.61.162.8:27020"),    # Celebrity's Trickshot Server
+                ("Celebrity's Trickshot Server 2", "45.61.162.8:27021"),    # Celebrity's Trickshot Server
+                ("Celebrity's Trickshot Server 3", "45.61.162.8:27022"),    # Celebrity's Trickshot Server
+                ("@Brudders FFA [TRICKSHOT LAST OR BAN]", "45.62.160.81:27016"),   # @Brudders FFA [TRICKSHOT LAST OR BAN]
+                ("[AU] Gunji x 71st - Vanilla FFA Trickshotting!", "51.161.192.200:27018"), # [AU] Gunji x 71st - Vanilla FFA Trickshotting!
+                ("[AU] Gunji x 71st - Vanilla FFA Trickshotting 2!", "51.161.192.200:27017")  # [AU] Gunji x 71st - Vanilla FFA Trickshotting 2!
             ]
             while True:
                 display_trickshot_servers()
