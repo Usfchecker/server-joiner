@@ -206,8 +206,8 @@ def handle_scraped_servers_choice(is_filtered):
                 hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
                 if hwnd:
                     show_window(hwnd)
-                    wait(2)
-                    send_commands_to_window(hwnd, ['disconnect', f'connect {ip}:{port}'])
+                    send_commands_to_window(hwnd, [f'disconnect'])
+                    send_commands_to_window(hwnd, [f'connect {ip}:{port}'])
                     minimize_window(hwnd)
                 else:
                     print("Window with title 'H2M-Mod: 03361cd0-dirty' not found.")
@@ -226,8 +226,8 @@ def handle_scraped_servers_choice(is_filtered):
                 hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
                 if hwnd:
                     show_window(hwnd)
-                    wait(2)
-                    send_commands_to_window(hwnd, ['disconnect', f'connect {ip}:{port}'])
+                    send_commands_to_window(hwnd, [f'disconnect'])
+                    send_commands_to_window(hwnd, [f'connect {ip}:{port}'])
                     minimize_window(hwnd)
                 else:
                     print("Window with title 'H2M-Mod: 03361cd0-dirty' not found.")
@@ -244,8 +244,8 @@ def handle_scraped_servers_choice(is_filtered):
                 hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
                 if hwnd:
                     show_window(hwnd)
-                    wait(2)
-                    send_commands_to_window(hwnd, ['disconnect', f'connect {ip}:{port}'])
+                    send_commands_to_window(hwnd, [f'disconnect'])
+                    send_commands_to_window(hwnd, [f'connect {ip}:{port}'])
                     minimize_window(hwnd)
                 else:
                     print("Window with title 'H2M-Mod: 03361cd0-dirty' not found.")
