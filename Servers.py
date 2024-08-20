@@ -84,45 +84,11 @@ def display_menu():
     """Display the main menu"""
     clear_screen()
     print("Menu:")
-    print("1. Trickshot Servers")
-    print("2. Server Browser")
+    print("1. Server Browser")
     print("0. Exit")
 
-def display_trickshot_servers():
-    """Display the trickshot servers without showing IPs"""
-    clear_screen()
-    print("Trickshot Servers:")
-    servers = [
-        ("Celebrity's Trickshot Server", "45.61.162.8:27020"),    # Celebrity's Trickshot Server
-        ("Celebrity's Trickshot Server 2", "45.61.162.8:27021"),    # Celebrity's Trickshot Server
-        ("Celebrity's Trickshot Server 3", "45.61.162.8:27022"),    # Celebrity's Trickshot Server
-        ("@Brudders FFA [TRICKSHOT LAST OR BAN]", "45.62.160.81:27016"),   # @Brudders FFA [TRICKSHOT LAST OR BAN]
-        ("[AU] Gunji x 71st - Vanilla FFA Trickshotting!", "51.161.192.200:27018"), # [AU] Gunji x 71st - Vanilla FFA Trickshotting!
-        ("[AU] Gunji x 71st - Vanilla FFA Trickshotting 2!", "51.161.192.200:27017")  # [AU] Gunji x 71st - Vanilla FFA Trickshotting 2!
-    ]
-    for i, (name, _) in enumerate(servers, start=1):
-        print(f"{i}. {name}")
-    print("0. Back to Main Menu")
-
-def handle_trickshot_choice(choice, servers):
-    """Handle the trickshot server selection"""
-    if choice == '0':
-        return False
-    elif choice.isdigit() and 1 <= int(choice) <= len(servers):
-        server_name, server_ip = servers[int(choice) - 1]
-        hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
-        if hwnd:
-            show_window(hwnd)  # Ensure the window is visible
-            send_commands_to_window(hwnd, ['disconnect', f'connect {server_ip}'])
-            minimize_window(hwnd)  # Minimize the window after sending commands
-        else:
-            print("Window with title 'H2M-Mod: 03361cd0-dirty' not found.")
-    else:
-        print("Invalid choice. Please select a valid option.")
-    return True
-
-def scrape_h2m_trickshot_servers(url):
-    """Scrape H2M trickshot servers from the specified URL"""
+def h2m_servers(url):
+    """Scrape H2M servers from the specified URL"""
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -163,10 +129,14 @@ def filter_servers_by_mode(servers, mode_filter):
     """Filter the servers based on the game mode"""
     return [server for server in servers if mode_filter.lower() in server[3].lower()]
 
+def filter_trickshot_servers(servers):
+    """Filter the servers based on whether the server name contains 'Trickshot'"""
+    return [server for server in servers if 'trickshot' in server[0].lower()]
+
 def display_scraped_servers(servers):
-    """Display the scraped trickshot servers with player counts"""
+    """Display the scraped servers with player counts"""
     clear_screen()
-    print("Scraped H2M Trickshot Servers:")
+    print("Scraped Servers:")
     for i, (server_name, ip, port, mode, player_count) in enumerate(servers, start=1):
         # Extract current and max player counts
         try:
@@ -185,38 +155,21 @@ def display_scraped_servers(servers):
 
     print("0. Back to Main Menu")
 
-def display_game_modes():
-    """Display the game modes using a dictionary"""
-    clear_screen()
-    game_modes = {
-        "hp": "Hard Point",
-        "dom": "Domination",
-        "dm": "Free For All",
-        "gun": "Gun Game",
-        "war": "Team Death Match",
-        "sd": "Search And Destroy",
-        "conf": "Kill Confirmed"
-    }
-
-    print("Game Modes Options:")
-    for code, name in game_modes.items():
-        print(f"{code} - {name}")
-    print()
-
 def handle_scraped_servers_choice(is_filtered):
-    """Handle the scraped trickshot server selection"""
+    """Handle the scraped server selection"""
     url = 'https://master.iw4.zip/servers'
-    servers = scrape_h2m_trickshot_servers(url)
+    servers = h2m_servers(url)
 
     if not servers:
-        print("No H2M trickshot servers found.")
+        print("No servers found.")
         return True
 
     while True:
         clear_screen()
         print("1. Show all servers")
         print("2. Filter by game mode")
-        print("0. Back to Main Menu" if not is_filtered else "0. Back to Game Mode Filter")
+        print("3. Trickshot Servers")
+        print("0. Back to Main Menu" if not is_filtered else "0. Back to Filter")
         filter_choice = input("Enter your choice: ")
 
         if filter_choice == '1':
@@ -228,17 +181,17 @@ def handle_scraped_servers_choice(is_filtered):
                 server_name, ip, port, mode, player_count = servers[int(choice) - 1]
                 hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
                 if hwnd:
-                    show_window(hwnd)  # Ensure the window is visible
+                    show_window(hwnd)
                     send_commands_to_window(hwnd, ['disconnect', f'connect {ip}:{port}'])
-                    minimize_window(hwnd)  # Minimize the window after sending commands
+                    minimize_window(hwnd)
                 else:
                     print("Window with title 'H2M-Mod: 03361cd0-dirty' not found.")
             else:
                 print("Invalid choice. Please select a valid option.")
         elif filter_choice == '2':
             display_game_modes()
-            mode_filter = input("Enter game mode to filter by: ")
-            filtered_servers = filter_servers_by_mode(servers, mode_filter)
+            mode_choice = input("Enter game mode code: ")
+            filtered_servers = filter_servers_by_mode(servers, mode_choice)
             display_scraped_servers(filtered_servers)
             choice = input("Enter your choice: ")
             if choice == '0':
@@ -247,38 +200,54 @@ def handle_scraped_servers_choice(is_filtered):
                 server_name, ip, port, mode, player_count = filtered_servers[int(choice) - 1]
                 hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
                 if hwnd:
-                    show_window(hwnd)  # Ensure the window is visible
+                    show_window(hwnd)
                     send_commands_to_window(hwnd, ['disconnect', f'connect {ip}:{port}'])
-                    minimize_window(hwnd)  # Minimize the window after sending commands
+                    minimize_window(hwnd)
                 else:
                     print("Window with title 'H2M-Mod: 03361cd0-dirty' not found.")
             else:
                 print("Invalid choice. Please select a valid option.")
+        elif filter_choice == '3':
+            trickshot_servers = filter_trickshot_servers(servers)
+            if not trickshot_servers:
+                print("No Trickshot servers found.")
+                continue
+            display_scraped_servers(trickshot_servers)
+            choice = input("Enter your choice: ")
+            if choice == '0':
+                return True if not is_filtered else False
+            elif choice.isdigit() and 1 <= int(choice) <= len(trickshot_servers):
+                server_name, ip, port, mode, player_count = trickshot_servers[int(choice) - 1]
+                hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
+                if hwnd:
+                    show_window(hwnd)
+                    send_commands_to_window(hwnd, ['disconnect', f'connect {ip}:{port}'])
+                    minimize_window(hwnd)
+                else:
+                    print("Window with title 'H2M-Mod: 03361cd0-dirty' not found.")
+            else:
+                print("Invalid choice. Please select a valid option.")
+        elif filter_choice == '0':
+            return True if not is_filtered else False
         else:
             print("Invalid choice. Please select a valid option.")
 
-# Main execution
-if __name__ == "__main__":
+def main():
+    """Main function to handle the script execution"""
     setup()
     while True:
         display_menu()
         choice = input("Enter your choice: ")
         if choice == '1':
-            display_trickshot_servers()
-            server_choice = input("Enter your choice: ")
-            if handle_trickshot_choice(server_choice, [
-                ("Celebrity's Trickshot Server", "45.61.162.8:27020"),
-                ("Celebrity's Trickshot Server 2", "45.61.162.8:27021"),
-                ("Celebrity's Trickshot Server 3", "45.61.162.8:27022"),
-                ("@Brudders FFA [TRICKSHOT LAST OR BAN]", "45.62.160.81:27016"),
-                ("[AU] Gunji x 71st - Vanilla FFA Trickshotting!", "51.161.192.200:27018"),
-                ("[AU] Gunji x 71st - Vanilla FFA Trickshotting 2!", "51.161.192.200:27017")
-            ]) == False:
-                break
+            handle_scraped_servers_choice(is_filtered=False)
         elif choice == '2':
-            if not handle_scraped_servers_choice(is_filtered=False):
-                break
+            # Handle server browser option if needed
+            pass
         elif choice == '0':
-            sys.exit()
+            print("Exiting script...")
+            break
         else:
             print("Invalid choice. Please select a valid option.")
+
+if __name__ == "__main__":
+    main()
