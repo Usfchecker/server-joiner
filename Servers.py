@@ -64,8 +64,11 @@ def minimize_window(hwnd):
         print("No window handle provided.")
 
 def send_commands_to_window(hwnd, commands):
-    """Send multiple commands to the specified window"""
+    """Send multiple commands to the specified window and refocus the original window"""
     if hwnd:
+        # Store the handle of the original prompt window
+        original_hwnd = win32gui.GetForegroundWindow()
+        
         win32gui.SetForegroundWindow(hwnd)
         time.sleep(0.1)  # Short delay to ensure the window is in focus
         for command in commands:
@@ -73,6 +76,9 @@ def send_commands_to_window(hwnd, commands):
             pyautogui.press('enter')
             time.sleep(0.5)  # Delay between commands
         print(f"Sent commands: {commands}")
+        
+        # Restore focus to the original window
+        win32gui.SetForegroundWindow(original_hwnd)
     else:
         print("No window handle provided.")
 
@@ -83,8 +89,8 @@ def clear_screen():
 def display_menu():
     """Display the main menu"""
     clear_screen()
-    print("Menu:")
-    print("1. Server Browser")
+    print("=----------------------------------------------= CORNS SERVER BROWSER =-----------------------------------------------=")
+    print("2. Server Browser")
     print("0. Exit")
 
 def h2m_servers(url):
@@ -130,13 +136,13 @@ def filter_servers_by_mode(servers, mode_filter):
     return [server for server in servers if mode_filter.lower() in server[3].lower()]
 
 def filter_trickshot_servers(servers):
-    """Filter the servers based on whether the server name contains 'Trickshot'"""
+    """Filter the servers that contain 'Trickshot' in the server name"""
     return [server for server in servers if 'trickshot' in server[0].lower()]
 
 def display_scraped_servers(servers):
     """Display the scraped servers with player counts"""
     clear_screen()
-    print("Scraped Servers:")
+    print("Scraped H2M Servers:")
     for i, (server_name, ip, port, mode, player_count) in enumerate(servers, start=1):
         # Extract current and max player counts
         try:
@@ -152,8 +158,25 @@ def display_scraped_servers(servers):
             color = '\033[0m'  # Default color
 
         print(f"{i}. {server_name} - {mode} - {color}{player_count}\033[0m")  # Reset color after player count
-
     print("0. Back to Main Menu")
+    
+def display_game_modes():
+    """Display the game modes using a dictionary"""
+    clear_screen()
+    game_modes = {
+        "hp": "Hard Point",
+        "dom": "Domination",
+        "dm": "Free For All",
+        "gun": "Gun Game",
+        "war": "Team Death Match",
+        "sd": "Search And Destroy",
+        "conf": "Kill Confirmed"
+    }
+    print("Game Modes Options:")
+    
+    for code, name in game_modes.items():
+        print(f"{code} - {name}")
+    print()
 
 def handle_scraped_servers_choice(is_filtered):
     """Handle the scraped server selection"""
@@ -161,14 +184,15 @@ def handle_scraped_servers_choice(is_filtered):
     servers = h2m_servers(url)
 
     if not servers:
-        print("No servers found.")
+        print("No H2M servers found.")
         return True
 
     while True:
         clear_screen()
-        print("1. Show all servers")
-        print("2. Filter by game mode")
-        print("3. Trickshot Servers")
+        print("=----------------------------------------------= CORNS SERVER BROWSER =-----------------------------------------------=")
+        print("1. All Servers")
+        print("2. Filter Game Mode")
+        print("3. Filter Trickshot Servers")
         print("0. Back to Main Menu" if not is_filtered else "0. Back to Filter")
         filter_choice = input("Enter your choice: ")
 
@@ -208,16 +232,13 @@ def handle_scraped_servers_choice(is_filtered):
             else:
                 print("Invalid choice. Please select a valid option.")
         elif filter_choice == '3':
-            trickshot_servers = filter_trickshot_servers(servers)
-            if not trickshot_servers:
-                print("No Trickshot servers found.")
-                continue
-            display_scraped_servers(trickshot_servers)
+            filtered_servers = filter_trickshot_servers(servers)
+            display_scraped_servers(filtered_servers)
             choice = input("Enter your choice: ")
             if choice == '0':
                 return True if not is_filtered else False
-            elif choice.isdigit() and 1 <= int(choice) <= len(trickshot_servers):
-                server_name, ip, port, mode, player_count = trickshot_servers[int(choice) - 1]
+            elif choice.isdigit() and 1 <= int(choice) <= len(filtered_servers):
+                server_name, ip, port, mode, player_count = filtered_servers[int(choice) - 1]
                 hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
                 if hwnd:
                     show_window(hwnd)
@@ -228,23 +249,18 @@ def handle_scraped_servers_choice(is_filtered):
             else:
                 print("Invalid choice. Please select a valid option.")
         elif filter_choice == '0':
-            return True if not is_filtered else False
+            return True
         else:
             print("Invalid choice. Please select a valid option.")
 
 def main():
-    """Main function to handle the script execution"""
     setup()
     while True:
         display_menu()
         choice = input("Enter your choice: ")
-        if choice == '1':
-            handle_scraped_servers_choice(is_filtered=False)
-        elif choice == '2':
-            # Handle server browser option if needed
-            pass
+        if choice == '2':
+            handle_scraped_servers_choice(False)
         elif choice == '0':
-            print("Exiting script...")
             break
         else:
             print("Invalid choice. Please select a valid option.")
