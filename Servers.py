@@ -206,6 +206,7 @@ def handle_scraped_servers_choice(is_filtered):
                 hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
                 if hwnd:
                     show_window(hwnd)
+                    wait(2)
                     send_commands_to_window(hwnd, ['disconnect', f'connect {ip}:{port}'])
                     minimize_window(hwnd)
                 else:
@@ -225,6 +226,7 @@ def handle_scraped_servers_choice(is_filtered):
                 hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
                 if hwnd:
                     show_window(hwnd)
+                    wait(2)
                     send_commands_to_window(hwnd, ['disconnect', f'connect {ip}:{port}'])
                     minimize_window(hwnd)
                 else:
@@ -242,6 +244,7 @@ def handle_scraped_servers_choice(is_filtered):
                 hwnd = get_window_handle("H2M-Mod: 03361cd0-dirty")
                 if hwnd:
                     show_window(hwnd)
+                    wait(2)
                     send_commands_to_window(hwnd, ['disconnect', f'connect {ip}:{port}'])
                     minimize_window(hwnd)
                 else:
